@@ -107,6 +107,8 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+# Only the hashed copies are ever served; dropping originals shrinks the image.
+WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 MEDIA_URL = "media/"
 MEDIA_ROOT = ROOT_DIR / "media"
 
