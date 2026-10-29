@@ -52,7 +52,8 @@ Django REST API with PostgreSQL, JWT authentication and Swagger documentation.
 ├── requirements/            # base / dev / prod
 ├── scripts/entrypoint.sh
 ├── Dockerfile
-├── docker-compose.yml
+├── docker-compose.yml            # base (production-like) stack
+├── docker-compose.override.yml   # development overrides (auto-loaded)
 ├── .env.example
 └── README.md
 ```
@@ -70,9 +71,22 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Run the app in Docker instead: `docker compose up --build`. The container connects to
-the PostgreSQL on your machine via `host.docker.internal`, so PostgreSQL must accept
-connections from Docker networks (`listen_addresses` and a `pg_hba.conf` entry).
+### Docker Compose
+
+| Mode | Command | Runs |
+|---|---|---|
+| Development | `docker compose up --build` | `runserver` with auto-reload, `src/` mounted, dev settings |
+| Production-like | `docker compose -f docker-compose.yml up --build` | gunicorn, prod settings, exactly the image you ship |
+
+Services: `migrate` (one-off, applies migrations) → `web` (starts only after migrations succeed).
+`web` has a healthcheck, restart policy, CPU/memory limits, log rotation and is hardened
+(read-only filesystem, non-root, no Linux capabilities, `no-new-privileges`); the port is
+published on `127.0.0.1` only.
+
+The containers use the PostgreSQL configured in `.env`, reached on your machine via
+`host.docker.internal`, so PostgreSQL must accept connections from Docker networks
+(`listen_addresses` and a `pg_hba.conf` entry). Optional variables: `WEB_PORT`,
+`DOCKER_DB_HOST`, `IMAGE_NAME`, `IMAGE_TAG`.
 
 ### Docker image
 Multi-stage build (`base` → `builder` → `runtime`): dependencies are installed with
