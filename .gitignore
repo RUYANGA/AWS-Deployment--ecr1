@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+staticfiles/
+media/
+*.log
+.coverage
+htmlcov/
+.pytest_cache/
+.idea/
+.vscode/
+
+# Claude Code (personal overrides)
+.claude/settings.local.json
