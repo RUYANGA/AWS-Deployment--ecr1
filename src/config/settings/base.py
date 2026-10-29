@@ -138,6 +138,9 @@ SIMPLE_JWT = {
 }
 
 # Swagger / OpenAPI
+# Docs are hidden unless explicitly enabled, so production stays private by default.
+ENABLE_API_DOCS = env.bool("ENABLE_API_DOCS", default=False)
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "Logistic API",
     "DESCRIPTION": "REST API for the Logistic platform.",
