@@ -1,0 +1,20 @@
+[flake8]
+# Kept in line with Ruff (pyproject.toml) so the two tools never disagree.
+max-line-length = 100
+max-complexity = 10
+extend-ignore =
+    # whitespace before ':' / line break before binary operator: conflict with the formatter
+    E203,
+    W503,
+    # star imports between settings modules
+    F403,
+    F405
+exclude =
+    .git,
+    .venv,
+    __pycache__,
+    staticfiles,
+    media,
+    src/apps/*/migrations
+per-file-ignores =
+    src/config/settings/*.py: F401
