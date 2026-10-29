@@ -46,7 +46,7 @@ and blocks `git commit`, `git push`, `git pull` and `gh pr create` when a rule i
 | `git pull`   | working tree must be clean (commit or stash first) |
 | `gh pr create` | ≤ 10 changed files vs base · no attribution in title/body · no `--fill` |
 
-The test suite needs PostgreSQL running: `docker compose up -d db`.
+The test suite needs the local PostgreSQL configured in `.env` to be running.
 
 ## Commands
 

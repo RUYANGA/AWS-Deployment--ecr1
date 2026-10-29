@@ -62,15 +62,17 @@ Django REST API with PostgreSQL, JWT authentication and Swagger documentation.
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements/dev.txt
-cp .env.example .env          # then edit values
+cp .env.example .env          # then set your PostgreSQL credentials
 
-docker compose up -d db       # PostgreSQL on localhost:5434 (or use your own server)
+createdb -h localhost -U postgres logistic_db   # once
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Run the whole stack in Docker instead: `docker compose up --build`.
+Run the app in Docker instead: `docker compose up --build`. The container connects to
+the PostgreSQL on your machine via `host.docker.internal`, so PostgreSQL must accept
+connections from Docker networks (`listen_addresses` and a `pg_hba.conf` entry).
 
 ### Docker image
 Multi-stage build (`base` → `builder` → `runtime`): dependencies are installed with

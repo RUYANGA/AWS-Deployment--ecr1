@@ -83,7 +83,16 @@ DATABASES = {
         "PASSWORD": env("POSTGRES_PASSWORD"),
         "HOST": env("POSTGRES_HOST", default="localhost"),
         "PORT": env("POSTGRES_PORT", default="5432"),
-        "CONN_MAX_AGE": env.int("POSTGRES_CONN_MAX_AGE", default=60),
+        # Connection pooling (psycopg_pool) replaces persistent connections,
+        # so CONN_MAX_AGE must stay 0. The pool is per process (gunicorn worker).
+        "CONN_MAX_AGE": 0,
+        "OPTIONS": {
+            "pool": {
+                "min_size": env.int("POSTGRES_POOL_MIN_SIZE", default=2),
+                "max_size": env.int("POSTGRES_POOL_MAX_SIZE", default=20),
+                "timeout": env.float("POSTGRES_POOL_TIMEOUT", default=60),
+            },
+        },
     }
 }
 
