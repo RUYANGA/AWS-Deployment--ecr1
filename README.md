@@ -100,6 +100,51 @@ docker run --env-file .env -p 8000:8000 logistic-api
 | `RUN_MIGRATIONS` | `true` | Run `migrate` on start. Set `false` when migrations run as a separate task (e.g. ECS) |
 | `GUNICORN_CMD_ARGS` | – | Extra gunicorn options, e.g. `--workers 4 --timeout 60` |
 
+## Deploy to EC2
+
+```
+Internet -HTTPS-> ALB (ACM certificate) -HTTP:8000-> EC2 (Docker) -> RDS PostgreSQL
+                                                       ^ image from ECR
+```
+
+**1. Push the image to ECR** (from your machine):
+```bash
+REPO=<account-id>.dkr.ecr.<region>.amazonaws.com/logistic-api
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin ${REPO%/*}
+docker build --platform linux/amd64 -t $REPO:1.0.0 . && docker push $REPO:1.0.0
+```
+
+**2. Prepare the instance** (Amazon Linux 2023, instance role with
+`AmazonEC2ContainerRegistryReadOnly` + `AmazonSSMManagedInstanceCore`):
+```bash
+sudo dnf install -y docker && sudo systemctl enable --now docker
+sudo mkdir -p /opt/logistic && sudo cp .env.production /opt/logistic/.env && sudo chmod 600 /opt/logistic/.env
+```
+The production `.env` sets `DJANGO_SETTINGS_MODULE=config.settings.prod`, `DEBUG=False`,
+`ALLOWED_HOSTS=<your domain>`, `ENABLE_API_DOCS=False`, a new `SECRET_KEY` and the RDS
+`POSTGRES_*` values.
+
+**3. Deploy / update** (on the instance):
+```bash
+REPO=<account-id>.dkr.ecr.<region>.amazonaws.com/logistic-api
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin ${REPO%/*}
+docker pull $REPO:1.0.0
+
+# migrations once (RUN_MIGRATIONS=false stops the entrypoint from migrating a second time)
+docker run --rm --env-file /opt/logistic/.env -e RUN_MIGRATIONS=false $REPO:1.0.0 \
+  python manage.py migrate --noinput
+
+docker rm -f logistic-api 2>/dev/null
+docker run -d --name logistic-api --restart unless-stopped \
+  --env-file /opt/logistic/.env -e RUN_MIGRATIONS=false -p 8000:8000 $REPO:1.0.0
+```
+
+**4. Load balancer:** target group HTTP:8000 with health check path `/api/v1/health/`;
+ALB listener HTTPS:443 with an ACM certificate, HTTP:80 redirecting to 443.
+The health endpoint is answered by `HealthCheckMiddleware` before host validation and the
+HTTPS redirect, so ALB checks on the instance's private IP over HTTP succeed while every
+other path still enforces `ALLOWED_HOSTS` and HTTPS.
+
 ## API docs
 - Swagger UI: http://localhost:8000/api/v1/docs/
 - ReDoc: http://localhost:8000/api/v1/redoc/
