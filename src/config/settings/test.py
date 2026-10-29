@@ -1,5 +1,6 @@
 """Test settings."""
-from .base import *  # noqa: F401,F403
+
+from .base import *
 from .base import REST_FRAMEWORK
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

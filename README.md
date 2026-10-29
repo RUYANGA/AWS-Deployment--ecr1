@@ -171,6 +171,26 @@ In Swagger, call **login**, copy `tokens.access`, click **Authorize** and paste 
 python manage.py test apps --settings=config.settings.test
 ```
 
+## Code quality
+[pre-commit](https://pre-commit.com) runs on every `git commit`:
+
+| Hook | Checks |
+|---|---|
+| **ruff** / **ruff-format** | lint (pycodestyle, pyflakes, isort, bugbear, pyupgrade, simplify, Django) + Black-style formatting |
+| **flake8** | pycodestyle, pyflakes and complexity (max 10) |
+| **django-upgrade** | modern Django 5.2 APIs |
+| **bandit** | security issues |
+| **shellcheck** / **hadolint** | shell scripts and Dockerfile |
+| **django check** / **missing migrations** | `manage.py check`, `makemigrations --check` |
+| pre-commit-hooks | whitespace, EOF, YAML/JSON/TOML syntax, merge conflicts, private keys, large files, no direct commits to `main` |
+
+```bash
+pip install -r requirements/dev.txt
+pre-commit install            # once per clone
+pre-commit run --all-files    # run everything manually
+```
+Settings live in `pyproject.toml` (ruff, bandit) and `.flake8`; line length is 100.
+
 ## Contributing
 Rules live in [.claude/CLAUDE.md](.claude/CLAUDE.md) and are enforced by
 [.claude/hooks/git_guard.py](.claude/hooks/git_guard.py):

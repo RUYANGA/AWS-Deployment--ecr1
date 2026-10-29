@@ -55,4 +55,8 @@ source .venv/bin/activate
 python manage.py runserver 8001                               # dev server
 python manage.py test apps --settings=config.settings.test    # tests
 python manage.py makemigrations && python manage.py migrate   # DB changes
+pre-commit run --all-files                                    # format, lint, security
 ```
+
+Code must pass the pre-commit hooks (ruff, ruff-format, flake8, bandit, django-upgrade,
+shellcheck, hadolint, Django checks) before it is committed; line length is 100.

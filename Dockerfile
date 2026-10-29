@@ -45,8 +45,10 @@ FROM base AS runtime
 ENV PATH="/opt/venv/bin:$PATH" \
     DJANGO_SETTINGS_MODULE=config.settings.prod
 
-RUN groupadd --system app \
-    && useradd --system --gid app --home-dir /app --no-create-home app \
+# Fixed numeric UID/GID so orchestrators (ECS, Kubernetes runAsNonRoot) can verify non-root.
+ARG APP_UID=10001
+RUN groupadd --system --gid "${APP_UID}" app \
+    && useradd --system --uid "${APP_UID}" --gid app --home-dir /app --no-create-home app \
     && install -d -o app -g app /app/staticfiles /app/media
 
 COPY --from=builder /opt/venv /opt/venv
@@ -54,7 +56,7 @@ COPY --chown=app:app manage.py ./
 COPY --chown=app:app scripts/entrypoint.sh scripts/entrypoint.sh
 COPY --chown=app:app src/ src/
 
-USER app
+USER ${APP_UID}:${APP_UID}
 
 # Collect static files at build time so containers start instantly.
 # Placeholder values only satisfy settings import; nothing connects to a DB.
