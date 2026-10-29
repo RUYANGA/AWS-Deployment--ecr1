@@ -72,6 +72,21 @@ python manage.py runserver
 
 Run the whole stack in Docker instead: `docker compose up --build`.
 
+### Docker image
+Multi-stage build (`base` → `builder` → `runtime`): dependencies are installed with
+[uv](https://github.com/astral-sh/uv) into a virtualenv using a BuildKit cache, and only that
+virtualenv, the source code and pre-collected static files reach the final non-root image.
+
+```bash
+docker build -t logistic-api .
+docker run --env-file .env -p 8000:8000 logistic-api
+```
+
+| Runtime variable | Default | Purpose |
+|---|---|---|
+| `RUN_MIGRATIONS` | `true` | Run `migrate` on start. Set `false` when migrations run as a separate task (e.g. ECS) |
+| `GUNICORN_CMD_ARGS` | – | Extra gunicorn options, e.g. `--workers 4 --timeout 60` |
+
 ## API docs
 - Swagger UI: http://localhost:8000/api/v1/docs/
 - ReDoc: http://localhost:8000/api/v1/redoc/
