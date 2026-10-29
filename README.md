@@ -1,5 +1,7 @@
 # Logistic API
 
+[![CI](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ci.yml/badge.svg)](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ci.yml)
+
 Django REST API with PostgreSQL, JWT authentication and Swagger documentation.
 
 ## Stack
@@ -190,6 +192,19 @@ pre-commit install            # once per clone
 pre-commit run --all-files    # run everything manually
 ```
 Settings live in `pyproject.toml` (ruff, bandit) and `.flake8`; line length is 100.
+
+## Continuous integration
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and on pushes to `main`:
+
+| Job | What it does |
+|---|---|
+| **Lint & format** | all pre-commit hooks (ruff, flake8, bandit, django-upgrade, shellcheck, hadolint, Django checks) |
+| **Tests** | missing-migration check + test suite against a PostgreSQL 16 service |
+| **Docker build & smoke test** | builds the `runtime` image (BuildKit cache), runs migrations, starts gunicorn, waits for `/api/v1/health/`, verifies the container runs as UID 10001 |
+
+The Docker job only runs after lint and tests pass. Superseded runs on the same branch are cancelled.
+Make the three checks required in *Settings → Branches → Branch protection* so a PR cannot be
+merged while CI is red.
 
 ## Contributing
 Rules live in [.claude/CLAUDE.md](.claude/CLAUDE.md) and are enforced by
