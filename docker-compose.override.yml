@@ -9,6 +9,8 @@ services:
   web:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
+      # Silence runserver's "development server" banner (Django 5.2+).
+      DJANGO_RUNSERVER_HIDE_WARNING: "true"
     # Django dev server with auto-reload on code changes.
     command: ["python", "manage.py", "runserver", "127.0.0.1:${WEB_PORT:-8000}"]
     volumes:
