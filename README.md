@@ -80,13 +80,12 @@ python manage.py runserver
 
 Services: `migrate` (one-off, applies migrations) → `web` (starts only after migrations succeed).
 `web` has a healthcheck, restart policy, CPU/memory limits, log rotation and is hardened
-(read-only filesystem, non-root, no Linux capabilities, `no-new-privileges`); the port is
-published on `127.0.0.1` only.
+(read-only filesystem, non-root, no Linux capabilities, `no-new-privileges`).
 
-The containers use the PostgreSQL configured in `.env`, reached on your machine via
-`host.docker.internal`, so PostgreSQL must accept connections from Docker networks
-(`listen_addresses` and a `pg_hba.conf` entry). Optional variables: `WEB_PORT`,
-`DOCKER_DB_HOST`, `IMAGE_NAME`, `IMAGE_TAG`.
+Containers read `.env` as-is and use the **host network**, so the database settings in
+`.env` (`POSTGRES_HOST=localhost`, …) work unchanged and the app listens on
+`127.0.0.1:$WEB_PORT`. Host networking requires Docker Engine on Linux.
+Optional variables: `WEB_PORT`, `IMAGE_NAME`, `IMAGE_TAG`.
 
 ### Docker image
 Multi-stage build (`base` → `builder` → `runtime`): dependencies are installed with

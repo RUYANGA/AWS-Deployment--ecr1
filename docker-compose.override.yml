@@ -10,6 +10,6 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
     # Django dev server with auto-reload on code changes.
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: ["python", "manage.py", "runserver", "127.0.0.1:${WEB_PORT:-8000}"]
     volumes:
       - ./src:/app/src:ro

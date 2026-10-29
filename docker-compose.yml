@@ -4,17 +4,10 @@
 #   Development:        docker compose up --build
 #   Production-like:    docker compose -f docker-compose.yml up --build
 #
-# PostgreSQL is NOT part of this stack: the containers use the database
-# configured in .env, reached on the host machine via host.docker.internal.
+# Containers read .env as-is and share the host network, so the database
+# settings in .env (e.g. POSTGRES_HOST=localhost) work unchanged.
 
 name: logistic
-
-x-app-env: &app-env
-  # "localhost" inside a container is the container itself.
-  POSTGRES_HOST: ${DOCKER_DB_HOST:-host.docker.internal}
-  DJANGO_SETTINGS_MODULE: config.settings.prod
-  # No TLS terminator in front of the container locally.
-  SECURE_SSL_REDIRECT: "false"
 
 x-app: &app
   image: ${IMAGE_NAME:-logistic-api}:${IMAGE_TAG:-local}
@@ -22,8 +15,7 @@ x-app: &app
     context: .
     target: runtime
   env_file: .env
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
+  network_mode: host
   # Hardening: immutable filesystem, no privilege escalation, no Linux capabilities.
   read_only: true
   tmpfs:
@@ -43,7 +35,7 @@ services:
   migrate:
     <<: *app
     environment:
-      <<: *app-env
+      DJANGO_SETTINGS_MODULE: config.settings.prod
       RUN_MIGRATIONS: "false"
     command: ["python", "manage.py", "migrate", "--noinput"]
     restart: "no"
@@ -51,10 +43,17 @@ services:
   web:
     <<: *app
     environment:
-      <<: *app-env
+      DJANGO_SETTINGS_MODULE: config.settings.prod
       RUN_MIGRATIONS: "false"  # handled by the migrate service
-    ports:
-      - "127.0.0.1:${WEB_PORT:-8000}:8000"
+      SECURE_SSL_REDIRECT: "false"  # no TLS terminator in front locally
+    # Listens on the host directly (host network): only reachable from this machine.
+    command:
+      - gunicorn
+      - config.wsgi:application
+      - --chdir=src
+      - --bind=127.0.0.1:${WEB_PORT:-8000}
+      - --workers=3
+      - --access-logfile=-
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -67,7 +66,7 @@ services:
         - -c
         - >-
           import sys, urllib.request;
-          req = urllib.request.Request('http://127.0.0.1:8000/api/v1/health/',
+          req = urllib.request.Request('http://127.0.0.1:${WEB_PORT:-8000}/api/v1/health/',
           headers={'X-Forwarded-Proto': 'https'});
           sys.exit(0 if urllib.request.urlopen(req, timeout=4).status == 200 else 1)
       interval: 30s
