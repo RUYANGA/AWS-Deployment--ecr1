@@ -8,6 +8,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from ...utils import tokens_for_user
 from ..serializers import (
     AuthResponseSerializer,
     LoginSerializer,
@@ -16,7 +17,6 @@ from ..serializers import (
     UserSerializer,
 )
 from ..throttles import AuthRateThrottle
-from ...utils import tokens_for_user
 
 TAG = "Authentication"
 
@@ -30,7 +30,10 @@ class RegisterView(generics.GenericAPIView):
     @extend_schema(
         tags=[TAG],
         summary="Register a new user",
-        responses={201: AuthResponseSerializer, 400: OpenApiResponse(description="Validation error")},
+        responses={
+            201: AuthResponseSerializer,
+            400: OpenApiResponse(description="Validation error"),
+        },
     )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -51,7 +54,10 @@ class LoginView(generics.GenericAPIView):
     @extend_schema(
         tags=[TAG],
         summary="Log in with email and password",
-        responses={200: AuthResponseSerializer, 400: OpenApiResponse(description="Invalid credentials")},
+        responses={
+            200: AuthResponseSerializer,
+            400: OpenApiResponse(description="Invalid credentials"),
+        },
     )
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
