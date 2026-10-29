@@ -1,8 +1,7 @@
-# Base (production-like) stack. Local development tweaks live in
-# docker-compose.override.yml, which `docker compose` loads automatically.
+# Runs the app exactly as in production: gunicorn, production settings and
+# the same image that is pushed to ECR.
 #
-#   Development:        docker compose up --build
-#   Production-like:    docker compose -f docker-compose.yml up --build
+#   docker compose up --build
 #
 # Containers read .env as-is and share the host network, so the database
 # settings in .env (e.g. POSTGRES_HOST=localhost) work unchanged.

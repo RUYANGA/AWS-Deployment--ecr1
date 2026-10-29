@@ -52,8 +52,7 @@ Django REST API with PostgreSQL, JWT authentication and Swagger documentation.
 ├── requirements/            # base / dev / prod
 ├── scripts/entrypoint.sh
 ├── Dockerfile
-├── docker-compose.yml            # base (production-like) stack
-├── docker-compose.override.yml   # development overrides (auto-loaded)
+├── docker-compose.yml   # runs the production image locally
 ├── .env.example
 └── README.md
 ```
@@ -73,10 +72,9 @@ python manage.py runserver
 
 ### Docker Compose
 
-| Mode | Command | Runs |
-|---|---|---|
-| Development | `docker compose up --build` | `runserver` with auto-reload, `src/` mounted, dev settings |
-| Production-like | `docker compose -f docker-compose.yml up --build` | gunicorn, prod settings, exactly the image you ship |
+`docker compose up --build` runs the app exactly as in production: gunicorn,
+`config.settings.prod` and the same image that is pushed to ECR. For day-to-day
+development with auto-reload, use `python manage.py runserver`.
 
 Services: `migrate` (one-off, applies migrations) → `web` (starts only after migrations succeed).
 `web` has a healthcheck, restart policy, CPU/memory limits, log rotation and is hardened
