@@ -1,0 +1,9 @@
+{
+  "pythonVersion": "3.12",
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": ["src"],
+  "include": ["src", "manage.py"],
+  "exclude": ["**/__pycache__", ".venv", "staticfiles", "media"],
+  "typeCheckingMode": "off"
+}
