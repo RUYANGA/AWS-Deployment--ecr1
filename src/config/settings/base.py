@@ -1,4 +1,5 @@
 """Settings shared by every environment."""
+
 from datetime import timedelta
 from pathlib import Path
 

@@ -17,12 +17,13 @@ Rules enforced (see .claude/CLAUDE.md):
 Exit code 2 blocks the command; the reasons are printed to stderr and shown
 to Claude so it can fix the problem and retry.
 """
+
 import json
 import os
 import re
 import shlex
 import shutil
-import subprocess
+import subprocess  # nosec B404 - runs fixed git/manage.py commands only
 import sys
 import tempfile
 from pathlib import Path
@@ -48,7 +49,7 @@ ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().par
 
 # --------------------------------------------------------------------------- helpers
 def run(*args, check=False):
-    return subprocess.run(args, cwd=ROOT, capture_output=True, text=True, check=check)
+    return subprocess.run(args, cwd=ROOT, capture_output=True, text=True, check=check)  # nosec B603
 
 
 def git(*args):
@@ -91,7 +92,7 @@ def option_values(args, *names):
             elif name.startswith("--") and arg.startswith(name + "="):
                 values.append(arg.split("=", 1)[1])
             elif not name.startswith("--") and arg.startswith(name) and len(arg) > len(name):
-                values.append(arg[len(name):])
+                values.append(arg[len(name) :])
     return values
 
 
@@ -124,7 +125,7 @@ def quality_gate(root=ROOT):
         )
     errors = []
     for label, cmd in steps:
-        result = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+        result = subprocess.run(cmd, cwd=root, capture_output=True, text=True)  # nosec B603
         if result.returncode != 0:
             tail = "\n".join((result.stdout + result.stderr).strip().splitlines()[-15:])
             errors.append(f"{label} failed:\n{tail}")
@@ -138,8 +139,10 @@ def check_commit(args, stages_in_same_command=False):
     messages += [read_file(p) for p in option_values(args, "-F", "--file")]
     for msg in messages:
         if find_attribution(msg):
-            errors.append("Commit message credits Claude/Anthropic (Co-Authored-By trailer, "
-                          "'Generated with Claude Code' footer, etc.). Remove it.")
+            errors.append(
+                "Commit message credits Claude/Anthropic (Co-Authored-By trailer, "
+                "'Generated with Claude Code' footer, etc.). Remove it."
+            )
             break
 
     for key in ("user.name", "user.email"):
@@ -170,18 +173,23 @@ def check_push(args):
     forced = any(a in ("-f", "--force") or a.startswith("--force=") for a in args)
     targets = {a.split(":")[-1].lstrip("+") for a in args if not a.startswith("-")}
     if (forced or any(a.startswith("+") for a in args)) and targets & PROTECTED_BRANCHES:
-        errors.append(f"Force-push to a protected branch ({', '.join(PROTECTED_BRANCHES)}) is not allowed.")
+        errors.append(
+            f"Force-push to a protected branch ({', '.join(PROTECTED_BRANCHES)}) is not allowed."
+        )
 
     # Every local commit that is not on a remote yet is about to be published.
-    log = git("log", "--branches", "--not", "--remotes",
-              "--format=%H%x00%an <%ae>%x00%cn <%ce>%x00%B%x1e")
+    log = git(
+        "log", "--branches", "--not", "--remotes", "--format=%H%x00%an <%ae>%x00%cn <%ce>%x00%B%x1e"
+    )
     for entry in filter(None, (e.strip() for e in log.split("\x1e"))):
-        sha, author, committer, body = (entry.split("\x00") + ["", "", ""])[:4]
+        sha, author, committer, body = [*entry.split("\x00"), "", "", ""][:4]
         if IDENTITY_PATTERN.search(author) or IDENTITY_PATTERN.search(committer):
             errors.append(f"Commit {sha[:7]} has a Claude/Anthropic author or committer.")
         if find_attribution(body):
-            errors.append(f"Commit {sha[:7]} message credits Claude/Anthropic. "
-                          "Reword it (git commit --amend / rebase) before pushing.")
+            errors.append(
+                f"Commit {sha[:7]} message credits Claude/Anthropic. "
+                "Reword it (git commit --amend / rebase) before pushing."
+            )
 
     errors += quality_gate()
     return errors
@@ -198,20 +206,24 @@ def check_pr_create(args):
     texts = option_values(args, "-t", "--title") + option_values(args, "-b", "--body")
     texts += [read_file(p) for p in option_values(args, "-F", "--body-file")]
     if any(find_attribution(t) for t in texts):
-        errors.append("PR title/body credits Claude/Anthropic "
-                      "(e.g. 'Generated with Claude Code'). Remove it.")
+        errors.append(
+            "PR title/body credits Claude/Anthropic (e.g. 'Generated with Claude Code'). Remove it."
+        )
     if "--fill" in args or "--fill-first" in args or "--fill-verbose" in args:
         errors.append("Do not use --fill: write the PR title and body explicitly.")
 
     base = (option_values(args, "-B", "--base") or [DEFAULT_BASE])[-1]
     head = (option_values(args, "-H", "--head") or [git("branch", "--show-current")])[-1]
     head = head.split(":")[-1]
-    base_ref = f"origin/{base}" if git("rev-parse", "--verify", "--quiet", f"origin/{base}") else base
+    base_ref = (
+        f"origin/{base}" if git("rev-parse", "--verify", "--quiet", f"origin/{base}") else base
+    )
     changed = [f for f in git("diff", "--name-only", f"{base_ref}...{head}").splitlines() if f]
     if len(changed) > MAX_PR_FILES:
         errors.append(
             f"PR {head} -> {base} changes {len(changed)} files; the limit is {MAX_PR_FILES}. "
-            "Split it into smaller stacked PRs.")
+            "Split it into smaller stacked PRs."
+        )
     return errors
 
 
@@ -233,7 +245,12 @@ def classify(segment):
     return None, []
 
 
-CHECKS = {"commit": check_commit, "push": check_push, "pull": check_pull, "pr-create": check_pr_create}
+CHECKS = {
+    "commit": check_commit,
+    "push": check_push,
+    "pull": check_pull,
+    "pr-create": check_pr_create,
+}
 
 
 def main():
