@@ -37,7 +37,9 @@ THIRD_PARTY_APPS = [
     "drf_spectacular_sidecar",
     "corsheaders",
 ]
-LOCAL_APPS = []
+LOCAL_APPS = [
+    "apps.core",
+]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
