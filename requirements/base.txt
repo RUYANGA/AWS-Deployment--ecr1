@@ -4,5 +4,5 @@ djangorestframework-simplejwt>=5.5
 drf-spectacular[sidecar]>=0.28
 django-environ>=0.12
 django-cors-headers>=4.7
-psycopg[binary]>=3.2
+psycopg[binary,pool]>=3.2
 whitenoise>=6.7
