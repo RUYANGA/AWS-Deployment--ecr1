@@ -1,0 +1,88 @@
+name: Push to ECR
+
+# Runs when a PR is merged (push to main). Lint, tests and the Docker smoke test already
+# passed on the pull request (ci.yml), so this workflow only builds and publishes the image.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel a publish that is in progress; queue newer merges behind it.
+concurrency:
+  group: ecr-main
+  cancel-in-progress: false
+
+# id-token: write lets GitHub issue the OIDC token used to assume the AWS role
+# (no long-lived access keys); contents: read is all the job needs from the repo.
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ECR_REPOSITORY: backend/logistic
+
+jobs:
+  push-ecr:
+    name: Push image to ECR
+    # workflow_dispatch can target any branch; only main may publish (and assume the role).
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to AWS using OIDC (no access keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # A commit is pushed only once: re-running the workflow for the same commit skips the
+      # build instead of rebuilding and re-tagging (and works with immutable tags as well).
+      - name: Check whether this commit is already in ECR
+        id: existing
+        run: |
+          tag=$(aws ecr batch-get-image --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$GITHUB_SHA" \
+            --query 'images[0].imageId.imageTag' --output text)
+          if [ "$tag" = "$GITHUB_SHA" ]; then
+            echo "Image for $GITHUB_SHA already exists, skipping push"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.existing.outputs.found != 'true'
+
+      - name: Build and push the image
+        if: steps.existing.outputs.found != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: true
+          # :<commit-sha> identifies the exact build (traceability, rollback);
+          # :latest moves to the newest build, so the ECR repo uses MUTABLE tags.
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          # One plain image per push instead of an image index + attestation manifests.
+          provenance: false
+          sbom: false
+          # main cannot read PR caches, but PRs can read main's: save the cache here so
+          # the next PR smoke-test builds start warm.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        env:
+          IMAGE: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        run: |
+          echo "Image in ECR: $IMAGE"
+          echo "### Image in ECR :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$IMAGE\`" >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,7 @@
 # Logistic API
 
-[![CI](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ci.yml/badge.svg)](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ci.yml)
+[![CI](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ci.yml)
+[![Push to ECR](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ecr.yml/badge.svg?branch=main)](https://github.com/RUYANGA/AWS-Deployment--ecr1/actions/workflows/ecr.yml)
 
 Django REST API with PostgreSQL, JWT authentication and Swagger documentation.
 
@@ -194,17 +195,24 @@ pre-commit run --all-files    # run everything manually
 Settings live in `pyproject.toml` (ruff, bandit) and `.flake8`; line length is 100.
 
 ## Continuous integration
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull request and on pushes to `main`:
+Two workflows, so nothing runs twice:
+
+| Workflow | Trigger | Jobs |
+|---|---|---|
+| [`ci.yml`](.github/workflows/ci.yml) | every **pull request** | **Lint & format** · **Tests** · **Docker build & smoke test** |
+| [`ecr.yml`](.github/workflows/ecr.yml) | **merge to `main`** (or manual run on `main`) | **Push image to ECR** only |
 
 | Job | What it does |
 |---|---|
 | **Lint & format** | all pre-commit hooks (ruff, flake8, bandit, django-upgrade, shellcheck, hadolint, Django checks) |
 | **Tests** | missing-migration check + test suite against a PostgreSQL 16 service |
 | **Docker build & smoke test** | builds the `runtime` image (BuildKit cache), runs migrations, starts gunicorn, waits for `/api/v1/health/`, verifies the container runs as UID 10001 |
-| **Push image to ECR** | **pushes to `main` only**, after the three jobs above pass: assumes `AWS_ROLE_ARN` via GitHub OIDC (no access keys) and pushes one plain image (no attestation manifests) tagged `backend/logistic:<commit-sha>` and `:latest`; skipped if that commit is already in ECR |
+| **Push image to ECR** | assumes `AWS_ROLE_ARN` via GitHub OIDC (no access keys) and pushes one plain image tagged `backend/logistic:<commit-sha>` and `:latest`; skipped if that commit is already in ECR; saves the build cache for later PRs |
 
-The Docker job only runs after lint and tests pass. Superseded PR runs are cancelled; runs on
-`main` are never cancelled, so an ECR push is not interrupted.
+The checks are not repeated after merging, so the PR must be tested against the latest
+`main`. Enable branch protection on `main` (*Settings → Branches*) with **Require status
+checks to pass** (the three CI jobs) and **Require branches to be up to date before
+merging**. Superseded PR runs are cancelled; ECR publishes are never cancelled.
 
 The ECR job needs two **repository variables** (*Settings → Secrets and variables → Actions →
 Variables*): `AWS_ROLE_ARN` (IAM role trusted for `repo:<owner>/<repo>:ref:refs/heads/main`
