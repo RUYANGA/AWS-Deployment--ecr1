@@ -22,16 +22,26 @@ select = [
     "SIM", # flake8-simplify
     "DJ",  # flake8-django
     "RUF", # ruff-specific
+    "D",   # pydocstyle (docstrings)
 ]
 ignore = [
     "RUF012", # mutable class attributes are idiomatic in Django/DRF (Meta.fields, permission_classes)
+    "D104",   # package __init__ files are mostly empty or re-exports
+    "D105",   # magic methods (__str__ etc.) are self-explanatory
+    "D106",   # nested Meta classes
+    "D107",   # __init__ is documented in the class docstring
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "config"]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
 "src/config/settings/*.py" = ["F403", "F405"] # star imports between settings modules
+"**/tests/**" = ["D"]                          # test names describe the scenario
+"**/migrations/**" = ["D"]                     # generated code
 
 [tool.ruff.format]
 quote-style = "double"

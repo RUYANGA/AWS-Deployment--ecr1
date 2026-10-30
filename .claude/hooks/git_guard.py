@@ -49,14 +49,17 @@ ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().par
 
 # --------------------------------------------------------------------------- helpers
 def run(*args, check=False):
+    """Run a command in the project root and capture its output."""
     return subprocess.run(args, cwd=ROOT, capture_output=True, text=True, check=check)  # nosec B603
 
 
 def git(*args):
+    """Run a git command and return its stripped stdout."""
     return run("git", *args).stdout.strip()
 
 
 def find_attribution(text):
+    """Return the attribution patterns that match ``text`` (empty list if none)."""
     return [p for p in ATTRIBUTION_PATTERNS if re.search(p, text or "", re.IGNORECASE)]
 
 
@@ -97,6 +100,7 @@ def option_values(args, *names):
 
 
 def read_file(path):
+    """Read a file relative to the project root; return ``""`` if unreadable or stdin."""
     try:
         return (ROOT / path).read_text() if path != "-" else ""
     except OSError:
@@ -134,6 +138,16 @@ def quality_gate(root=ROOT):
 
 # --------------------------------------------------------------------------- checks
 def check_commit(args, stages_in_same_command=False):
+    """Validate a ``git commit``: message, author identity, secrets and quality gate.
+
+    Args:
+        args: Arguments that follow ``git commit``.
+        stages_in_same_command: Whether a ``git add`` runs earlier in the same command,
+            in which case the index is not final yet and the working tree is checked.
+
+    Returns:
+        A list of error messages; empty when the commit may proceed.
+    """
     errors = []
     messages = option_values(args, "-m", "--message")
     messages += [read_file(p) for p in option_values(args, "-F", "--file")]
@@ -169,6 +183,14 @@ def check_commit(args, stages_in_same_command=False):
 
 
 def check_push(args):
+    """Validate a ``git push``: protected branches, unpushed commits and quality gate.
+
+    Args:
+        args: Arguments that follow ``git push``.
+
+    Returns:
+        A list of error messages; empty when the push may proceed.
+    """
     errors = []
     forced = any(a in ("-f", "--force") or a.startswith("--force=") for a in args)
     targets = {a.split(":")[-1].lstrip("+") for a in args if not a.startswith("-")}
@@ -196,12 +218,21 @@ def check_push(args):
 
 
 def check_pull(_args):
+    """Require a clean working tree before ``git pull``."""
     if git("status", "--porcelain", "--untracked-files=no"):
         return ["Working tree has uncommitted changes. Commit or stash them before pulling."]
     return []
 
 
 def check_pr_create(args):
+    """Validate ``gh pr create``: no attribution, explicit body and at most 10 files.
+
+    Args:
+        args: Arguments that follow ``gh pr create``.
+
+    Returns:
+        A list of error messages; empty when the PR may be created.
+    """
     errors = []
     texts = option_values(args, "-t", "--title") + option_values(args, "-b", "--body")
     texts += [read_file(p) for p in option_values(args, "-F", "--body-file")]
@@ -254,6 +285,11 @@ CHECKS = {
 
 
 def main():
+    """Read the hook payload from stdin and check every git/gh command in it.
+
+    Returns:
+        ``0`` to allow the command, ``2`` to block it (reasons are printed to stderr).
+    """
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError:

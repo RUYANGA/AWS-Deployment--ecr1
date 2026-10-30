@@ -178,7 +178,7 @@ python manage.py test apps --settings=config.settings.test
 
 | Hook | Checks |
 |---|---|
-| **ruff** / **ruff-format** | lint (pycodestyle, pyflakes, isort, bugbear, pyupgrade, simplify, Django) + Black-style formatting |
+| **ruff** / **ruff-format** | lint (pycodestyle, pyflakes, isort, bugbear, pyupgrade, simplify, Django, **Google-style docstrings**) + Black-style formatting |
 | **flake8** | pycodestyle, pyflakes and complexity (max 10) |
 | **django-upgrade** | modern Django 5.2 APIs |
 | **bandit** | security issues |

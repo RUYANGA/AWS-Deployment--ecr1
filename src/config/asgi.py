@@ -1,3 +1,8 @@
+"""ASGI entry point for ASGI servers (uvicorn, daphne).
+
+Defaults to production settings; override with ``DJANGO_SETTINGS_MODULE``.
+"""
+
 import os
 
 from django.core.asgi import get_asgi_application
