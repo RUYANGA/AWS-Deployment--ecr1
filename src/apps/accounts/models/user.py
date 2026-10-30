@@ -1,3 +1,5 @@
+"""Custom user model."""
+
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -8,6 +10,12 @@ from ..managers import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    """Application user, identified by email address instead of a username.
+
+    Uses a UUID primary key so user IDs are not guessable or enumerable. Supports
+    Django's groups and permissions through :class:`PermissionsMixin`.
+    """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField("email address", unique=True)
     first_name = models.CharField(max_length=150)
@@ -34,4 +42,5 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def full_name(self):
+        """First and last name separated by a space, without surrounding whitespace."""
         return f"{self.first_name} {self.last_name}".strip()
