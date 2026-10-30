@@ -1,3 +1,9 @@
+"""Root URL configuration.
+
+All API routes are versioned under ``/api/v1/``. The OpenAPI schema, Swagger UI and
+ReDoc are only routed when ``ENABLE_API_DOCS`` is true.
+"""
+
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
