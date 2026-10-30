@@ -172,8 +172,8 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Tags are immutable in ECR: re-running the workflow for the same commit would fail
-      # with "tag already exists", so skip the push when this commit is already there.
+      # A commit is pushed only once: re-running the workflow for the same commit skips the
+      # build instead of rebuilding and re-tagging (and works with immutable tags as well).
       - name: Check whether this commit is already in ECR
         id: existing
         run: |
@@ -197,8 +197,8 @@ jobs:
           context: .
           target: runtime
           push: true
-          # :<commit-sha> is immutable (traceability, rollback); :latest moves to the newest
-          # build. The ECR repo uses IMMUTABLE_WITH_EXCLUSION with "latest" excluded.
+          # :<commit-sha> identifies the exact build (traceability, rollback);
+          # :latest moves to the newest build, so the ECR repo uses MUTABLE tags.
           tags: |
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest

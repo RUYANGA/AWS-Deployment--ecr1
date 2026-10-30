@@ -211,14 +211,17 @@ Variables*): `AWS_ROLE_ARN` (IAM role trusted for `repo:<owner>/<repo>:ref:refs/
 through the `token.actions.githubusercontent.com` OIDC provider, allowed to push to the
 repository) and `AWS_REGION`.
 
-**ECR repository settings** (one-time, `backend/logistic` in `eu-west-1`):
+**ECR repository settings** (`backend/logistic` in `eu-west-1`): tag mutability is
+**MUTABLE**, so `:latest` can move to each new build. Optional hardening, which keeps
+commit-SHA tags locked while still letting `latest` move:
 ```bash
-# Commit-SHA tags stay immutable; only "latest" may move to a newer image.
 aws ecr put-image-tag-mutability --region eu-west-1 --repository-name backend/logistic \
   --image-tag-mutability IMMUTABLE_WITH_EXCLUSION \
   --image-tag-mutability-exclusion-filters filterType=WILDCARD,filter=latest
+```
 
-# Delete untagged images after 1 day and keep only the 20 most recent images.
+Lifecycle policy (one-time): delete untagged images after 1 day, keep the 20 most recent:
+```bash
 aws ecr put-lifecycle-policy --region eu-west-1 --repository-name backend/logistic \
   --lifecycle-policy-text file://infra/ecr/lifecycle-policy.json
 ```
