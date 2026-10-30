@@ -1,3 +1,5 @@
+"""API views for the core app."""
+
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
@@ -22,6 +24,12 @@ class HealthCheckView(APIView):
         ),
     )
     def get(self, request):
+        """Report service and database health.
+
+        Returns ``200`` with ``{"status": "ok", "database": "ok"}`` when the database is
+        reachable, otherwise ``503`` with ``{"status": "degraded",
+        "database": "unavailable"}``. No authentication required.
+        """
         # Requests normally get answered by HealthCheckMiddleware; this view keeps
         # the endpoint in the OpenAPI schema and serves it if the middleware is off.
         payload, status = health_report()

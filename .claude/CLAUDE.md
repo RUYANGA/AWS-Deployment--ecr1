@@ -28,6 +28,9 @@ and blocks `git commit`, `git push`, `git pull` and `gh pr create` when a rule i
 
 - Conventional Commits: `type(scope): summary` — types: `feat`, `fix`, `refactor`,
   `test`, `docs`, `chore`, `ci`, `perf`, `style`. Imperative mood, ≤ 72 chars.
+- Google-style docstrings on every module, class and public function/method (enforced by
+  ruff `D` rules; tests, migrations, package `__init__`, `Meta` and magic methods exempt).
+  View and serializer docstrings are published in Swagger, so write them for API users.
 - Small, focused commits. Never commit `.env` or other secrets, `.venv/`,
   `__pycache__/`, `staticfiles/`.
 

@@ -1,3 +1,5 @@
+"""Middleware for the core app."""
+
 from django.http import JsonResponse
 
 from .health import HEALTH_PATH, health_report
@@ -13,9 +15,19 @@ class HealthCheckMiddleware:
     """
 
     def __init__(self, get_response):
+        """Store the next handler in the middleware chain."""
         self.get_response = get_response
 
     def __call__(self, request):
+        """Answer health check requests directly; pass everything else on.
+
+        Args:
+            request: The incoming HTTP request.
+
+        Returns:
+            A JSON health response for ``GET``/``HEAD`` on the health path, otherwise
+            the response from the rest of the middleware chain.
+        """
         if request.path == HEALTH_PATH and request.method in ("GET", "HEAD"):
             payload, status = health_report()
             return JsonResponse(payload, status=status)
