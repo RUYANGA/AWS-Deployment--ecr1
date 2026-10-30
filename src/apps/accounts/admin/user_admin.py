@@ -1,3 +1,5 @@
+"""Django admin configuration for the custom user model."""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -6,6 +8,12 @@ from ..models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
+    """Admin for the email-based user model.
+
+    Adapts Django's built-in user admin to use email instead of a username and to show
+    the extra profile fields.
+    """
+
     ordering = ["-date_joined"]
     list_display = ["email", "first_name", "last_name", "is_active", "is_staff", "date_joined"]
     list_filter = ["is_active", "is_staff", "is_superuser"]

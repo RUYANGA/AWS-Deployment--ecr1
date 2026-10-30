@@ -1,3 +1,5 @@
+"""URL routes for the core app, mounted at ``/api/v1/``."""
+
 from django.urls import path
 
 from .views import HealthCheckView
