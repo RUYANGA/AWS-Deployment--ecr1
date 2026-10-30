@@ -5,6 +5,9 @@ from pathlib import Path
 
 import environ
 
+from config.openapi import TAGS as OPENAPI_TAGS
+from config.openapi import build_description
+
 # BASE_DIR -> src/, ROOT_DIR -> repository root (holds .env, Docker files, requirements)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
@@ -157,7 +160,12 @@ ENABLE_API_DOCS = env.bool("ENABLE_API_DOCS", default=False)
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Logistic API",
-    "DESCRIPTION": "REST API for the Logistic platform.",
+    "DESCRIPTION": build_description(
+        access_minutes=env("ACCESS_TOKEN_LIFETIME_MINUTES"),
+        refresh_days=env("REFRESH_TOKEN_LIFETIME_DAYS"),
+        throttle_rates=REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"],
+    ),
+    "TAGS": OPENAPI_TAGS,
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
