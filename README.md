@@ -201,8 +201,15 @@ Settings live in `pyproject.toml` (ruff, bandit) and `.flake8`; line length is 1
 | **Lint & format** | all pre-commit hooks (ruff, flake8, bandit, django-upgrade, shellcheck, hadolint, Django checks) |
 | **Tests** | missing-migration check + test suite against a PostgreSQL 16 service |
 | **Docker build & smoke test** | builds the `runtime` image (BuildKit cache), runs migrations, starts gunicorn, waits for `/api/v1/health/`, verifies the container runs as UID 10001 |
+| **Push image to ECR** | **pushes to `main` only**, after the three jobs above pass: assumes `AWS_ROLE_ARN` via GitHub OIDC (no access keys) and pushes `backend/logistic:<commit-sha>`; skipped if that tag already exists (ECR tags are immutable) |
 
-The Docker job only runs after lint and tests pass. Superseded runs on the same branch are cancelled.
+The Docker job only runs after lint and tests pass. Superseded PR runs are cancelled; runs on
+`main` are never cancelled, so an ECR push is not interrupted.
+
+The ECR job needs two **repository variables** (*Settings → Secrets and variables → Actions →
+Variables*): `AWS_ROLE_ARN` (IAM role trusted for `repo:<owner>/<repo>:ref:refs/heads/main`
+through the `token.actions.githubusercontent.com` OIDC provider, allowed to push to the
+repository) and `AWS_REGION`.
 Make the three checks required in *Settings → Branches → Branch protection* so a PR cannot be
 merged while CI is red.
 
