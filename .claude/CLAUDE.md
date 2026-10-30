@@ -61,6 +61,7 @@ python manage.py makemigrations && python manage.py migrate   # DB changes
 pre-commit run --all-files                                    # format, lint, security
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same hooks, the tests and a Docker smoke test on every PR.
+CI (`.github/workflows/ci.yml`) runs the same hooks, the tests and a Docker smoke test on every PR;
+`.github/workflows/ecr.yml` only publishes the image to ECR after a merge to `main`.
 Code must pass the pre-commit hooks (ruff, ruff-format, flake8, bandit, django-upgrade,
 shellcheck, hadolint, Django checks) before it is committed; line length is 100.
