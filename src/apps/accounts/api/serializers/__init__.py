@@ -6,6 +6,7 @@ from .management import (
     UserUpdateSerializer,
 )
 from .password import ChangePasswordSerializer
+from .profile import ProfileUpdateSerializer
 from .token import AuthResponseSerializer, TokenPairSerializer
 from .user import UserSerializer
 
@@ -15,6 +16,7 @@ __all__ = [
     "LoginSerializer",
     "LogoutSerializer",
     "ManagedUserSerializer",
+    "ProfileUpdateSerializer",
     "RegisterSerializer",
     "SetPasswordSerializer",
     "TokenPairSerializer",
