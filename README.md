@@ -167,6 +167,11 @@ In Swagger, call **login**, copy `tokens.access`, click **Authorize** and paste 
 | POST | `auth/logout/` | Bearer | Blacklist refresh token |
 | GET/PATCH | `auth/me/` | Bearer | View / update own profile |
 | POST | `auth/change-password/` | Bearer | Change password |
+| GET | `users/` | Staff | List users (paginated; `?search=`, `?is_active=`, `?is_staff=`, `?ordering=`) |
+| POST | `users/` | Staff | Create a user |
+| GET / PATCH / DELETE | `users/{id}/` | Staff | Get / update / delete a user |
+| POST | `users/{id}/activate/` · `users/{id}/deactivate/` | Staff | Enable / disable an account (tokens stop working immediately) |
+| POST | `users/{id}/set-password/` | Staff | Set a user's password |
 | GET | `health/` | – | Service + database health check |
 
 ## Tests
