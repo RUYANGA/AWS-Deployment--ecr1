@@ -5,18 +5,14 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..serializers import ChangePasswordSerializer, UserSerializer
+from ..serializers import ChangePasswordSerializer, ProfileUpdateSerializer, UserSerializer
 
 TAG = "Profile"
 
 
 @extend_schema(tags=[TAG])
 class MeView(generics.RetrieveUpdateAPIView):
-    """Read or partially update the authenticated user's profile.
-
-    ``GET`` returns the profile; ``PATCH`` updates the editable fields (first name,
-    last name, phone number).
-    """
+    """Read or update the authenticated user's own profile."""
 
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
@@ -25,6 +21,34 @@ class MeView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         """Return the authenticated user, so the endpoint needs no ID in the URL."""
         return self.request.user
+
+    def get_serializer_class(self):
+        """Accept profile changes on ``PATCH``; always respond with the profile."""
+        if self.request.method == "PATCH":
+            return ProfileUpdateSerializer
+        return UserSerializer
+
+    @extend_schema(summary="Get your profile")
+    def get(self, request, *args, **kwargs):
+        """Return the authenticated user's profile."""
+        return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update your profile",
+        request=ProfileUpdateSerializer,
+        responses={200: UserSerializer, 400: OpenApiResponse(description="Validation error")},
+    )
+    def patch(self, request, *args, **kwargs):
+        """Update any of: email, first name, last name, phone number and password.
+
+        All fields are optional. To change ``email`` or ``password``, also send
+        ``current_password``. A new ``password`` must be repeated in ``password_confirm``.
+        Tokens already issued stay valid after a password change.
+        """
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data)
 
 
 class ChangePasswordView(generics.GenericAPIView):
