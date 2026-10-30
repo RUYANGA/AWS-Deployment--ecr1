@@ -22,6 +22,13 @@ TAGS = [
         ),
     },
     {
+        "name": "Users",
+        "description": (
+            "User management for administrators (`is_staff`): list, search, create, "
+            "update, activate/deactivate, set passwords and delete accounts."
+        ),
+    },
+    {
         "name": "Health",
         "description": "Liveness / readiness probe for load balancers and orchestrators.",
     },
@@ -77,6 +84,14 @@ Forward the caller's `Authorization` header to **`GET /api/v1/auth/me/`**:
 Store the user's **`id`** (a UUID) as the reference to the user in your own data; it
 never changes, unlike the email address.
 
+## User management (administrators)
+
+Staff users manage accounts under `/api/v1/users/`: list with search, filters and
+sorting, create, update, **deactivate** (the user's tokens stop working immediately),
+re-activate, set a password and delete. Superuser accounts can only be changed by
+superusers, `is_superuser` cannot be set through the API, and administrators cannot
+deactivate, demote or delete themselves.
+
 ## Try it in Swagger
 
 1. Call **login** (or **register**) below and copy `tokens.access` from the response.
@@ -87,6 +102,8 @@ never changes, unlike the email address.
 
 - **Versioning:** every endpoint lives under `/api/v1/`.
 - **Format:** JSON requests and responses; timestamps are ISO 8601 in UTC.
+- **Pagination:** list endpoints return `count`, `next`, `previous` and `results`; use
+  `?page=` and `?page_size=` (default 20, max 100).
 - **Errors:** `{{"detail": "..."}}` for authentication and permission errors;
   `{{"<field>": ["..."]}}` for validation errors, or `non_field_errors` when no single
   field is at fault.

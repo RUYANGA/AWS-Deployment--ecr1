@@ -1,5 +1,6 @@
 from .auth import LoginView, LogoutView, RefreshView, RegisterView
 from .profile import ChangePasswordView, MeView
+from .users import UserViewSet
 
 __all__ = [
     "ChangePasswordView",
@@ -8,4 +9,5 @@ __all__ = [
     "MeView",
     "RefreshView",
     "RegisterView",
+    "UserViewSet",
 ]
