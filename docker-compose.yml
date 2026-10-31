@@ -3,8 +3,8 @@
 #
 #   docker compose up --build
 #
-# Containers read .env as-is and share the host network, so the database
-# settings in .env (e.g. POSTGRES_HOST=localhost) work unchanged.
+# The web service and PostgreSQL run on the Compose network. The database data is
+# persisted in the named postgres_data volume.
 
 name: logistic
 
@@ -14,7 +14,6 @@ x-app: &app
     context: .
     target: runtime
   env_file: .env
-  network_mode: host
   # Hardening: immutable filesystem, no privilege escalation, no Linux capabilities.
   read_only: true
   tmpfs:
@@ -30,27 +29,47 @@ x-app: &app
       max-file: "3"
 
 services:
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   # One-off task: applies migrations once, before the web service starts.
   migrate:
     <<: *app
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
+      POSTGRES_HOST: db
       RUN_MIGRATIONS: "false"
     command: ["python", "manage.py", "migrate", "--noinput"]
+    depends_on:
+      db:
+        condition: service_healthy
     restart: "no"
 
   web:
     <<: *app
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.prod
+      POSTGRES_HOST: db
       RUN_MIGRATIONS: "false"  # handled by the migrate service
       SECURE_SSL_REDIRECT: "false"  # no TLS terminator in front locally
-    # Listens on the host directly (host network): only reachable from this machine.
+    ports:
+      - "${WEB_PORT:-8000}:8000"
     command:
       - gunicorn
       - config.wsgi:application
       - --chdir=src
-      - --bind=127.0.0.1:${WEB_PORT:-8000}
+      - --bind=0.0.0.0:8000
       - --workers=3
       - --access-logfile=-
     depends_on:
@@ -77,3 +96,6 @@ services:
         limits:
           cpus: "1.0"
           memory: 512M
+
+volumes:
+  postgres_data:

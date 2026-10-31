@@ -83,10 +83,10 @@ Services: `migrate` (one-off, applies migrations) → `web` (starts only after m
 `web` has a healthcheck, restart policy, CPU/memory limits, log rotation and is hardened
 (read-only filesystem, non-root, no Linux capabilities, `no-new-privileges`).
 
-Containers read `.env` as-is and use the **host network**, so the database settings in
-`.env` (`POSTGRES_HOST=localhost`, …) work unchanged and the app listens on
-`127.0.0.1:$WEB_PORT`. Host networking requires Docker Engine on Linux.
-Optional variables: `WEB_PORT`, `IMAGE_NAME`, `IMAGE_TAG`.
+The `db` service runs PostgreSQL with data persisted in the named `postgres_data` volume.
+The `migrate` and `web` services connect to it using the Compose hostname `db`, and the
+app is published on `localhost:$WEB_PORT`. Optional variables: `WEB_PORT`, `IMAGE_NAME`,
+`IMAGE_TAG`.
 
 ### Docker image
 Multi-stage build (`base` → `builder` → `runtime`): dependencies are installed with
