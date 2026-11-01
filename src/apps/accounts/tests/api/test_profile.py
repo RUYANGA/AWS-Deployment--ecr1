@@ -11,7 +11,11 @@ NEW_PASSWORD = "An0ther-Str0ng-Pass!"
 class ProfileUpdateTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="jane@example.com", password=PASSWORD, first_name="Jane", last_name="Doe"
+            email="jane@example.com",
+            password=PASSWORD,
+            first_name="Jane",
+            last_name="Doe",
+            is_email_verified=True,
         )
         User.objects.create_user(
             email="taken@example.com", password=PASSWORD, first_name="T", last_name="K"
