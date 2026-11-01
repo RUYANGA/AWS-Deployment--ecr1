@@ -185,6 +185,24 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 
+# Email
+# Development prints emails to the console; set EMAIL_BACKEND to the SMTP backend
+# (e.g. Amazon SES SMTP) in production. Tests always use Django's in-memory backend.
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=10)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Logistic <no-reply@localhost>")
+
+# One-time codes that verify a new account's email address
+EMAIL_OTP_LENGTH = 6
+EMAIL_OTP_TTL_MINUTES = env.int("EMAIL_OTP_TTL_MINUTES", default=10)
+EMAIL_OTP_RESEND_COOLDOWN_SECONDS = env.int("EMAIL_OTP_RESEND_COOLDOWN_SECONDS", default=60)
+EMAIL_OTP_MAX_ATTEMPTS = env.int("EMAIL_OTP_MAX_ATTEMPTS", default=5)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

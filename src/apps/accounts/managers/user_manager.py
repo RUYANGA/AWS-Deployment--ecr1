@@ -40,6 +40,8 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         """Create and save a superuser with staff and superuser rights.
 
+        The email address is treated as verified, so the superuser can log in at once.
+
         Args:
             email: Email address; normalised to lowercase and used to log in.
             password: Raw password to hash.
@@ -54,6 +56,7 @@ class UserManager(BaseUserManager):
         """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_email_verified", True)
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
         if extra_fields.get("is_superuser") is not True:
