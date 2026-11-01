@@ -23,6 +23,7 @@ class ManagedUserSerializer(serializers.ModelSerializer):
             "is_active",
             "is_staff",
             "is_superuser",
+            "is_email_verified",
             "date_joined",
             "last_login",
             "updated_at",
@@ -58,7 +59,8 @@ class UserCreateSerializer(UniqueEmailMixin, serializers.ModelSerializer):
     """Create an account on behalf of a user.
 
     The password must pass the password validators. ``is_superuser`` cannot be set
-    through the API.
+    through the API. The email address counts as verified, so the user can log in
+    without a verification code.
     """
 
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
@@ -100,7 +102,7 @@ class UserCreateSerializer(UniqueEmailMixin, serializers.ModelSerializer):
         Returns:
             The newly created user.
         """
-        return User.objects.create_user(**validated_data)
+        return User.objects.create_user(**validated_data, is_email_verified=True)
 
 
 class UserUpdateSerializer(UniqueEmailMixin, serializers.ModelSerializer):

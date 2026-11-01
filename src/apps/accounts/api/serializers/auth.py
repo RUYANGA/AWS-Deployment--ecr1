@@ -1,9 +1,12 @@
-"""Serializers for the registration, login and logout endpoints."""
+"""Serializers for the registration, email verification, login and logout endpoints."""
 
+from django.conf import settings
 from django.contrib.auth import authenticate, password_validation
 from rest_framework import serializers
 
 from ...models import User
+from ...utils import EmailOTPError, verify_email_otp
+from .user import UserSerializer
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -11,6 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     Validates that the email is not already registered (case-insensitive), that both
     password fields match and that the password satisfies Django's password validators.
+    The account starts unverified; a verification code is emailed to the address.
     """
 
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
@@ -77,6 +81,64 @@ class RegisterSerializer(serializers.ModelSerializer):
             The newly created :class:`~apps.accounts.models.User`.
         """
         return User.objects.create_user(**validated_data)
+
+
+class MessageSerializer(serializers.Serializer):
+    """A human-readable message about the outcome of a request."""
+
+    detail = serializers.CharField()
+
+
+class RegisterResponseSerializer(MessageSerializer):
+    """Body returned by register: the new, still unverified user profile."""
+
+    user = UserSerializer()
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    """Confirm an email address with the one-time code that was sent to it."""
+
+    email = serializers.EmailField()
+    code = serializers.RegexField(
+        rf"^\d{{{settings.EMAIL_OTP_LENGTH}}}$",
+        error_messages={"invalid": f"Enter the {settings.EMAIL_OTP_LENGTH}-digit code."},
+    )
+
+    def validate(self, attrs):
+        """Check the code and mark the account's email address as verified.
+
+        Args:
+            attrs: The submitted ``email`` and ``code``.
+
+        Returns:
+            The validated data with the verified user under ``"user"``.
+
+        Raises:
+            serializers.ValidationError: If the account does not exist or is already
+                verified, or the code is missing, expired, locked or wrong. Code errors
+                carry the reason (``expired``, ``locked``, ...) as the error code.
+        """
+        user = User.objects.filter(email__iexact=attrs["email"], is_active=True).first()
+        if user is None:
+            raise serializers.ValidationError(
+                {"code": ["Invalid email or verification code."]}, code="invalid"
+            )
+        if user.is_email_verified:
+            raise serializers.ValidationError(
+                {"email": ["This email address is already verified."]}, code="already_verified"
+            )
+        try:
+            verify_email_otp(user, attrs["code"])
+        except EmailOTPError as exc:
+            raise serializers.ValidationError({"code": [exc.message]}, code=exc.code) from exc
+        attrs["user"] = user
+        return attrs
+
+
+class ResendVerificationSerializer(serializers.Serializer):
+    """Email address of an account that needs a new verification code."""
+
+    email = serializers.EmailField()
 
 
 class LoginSerializer(serializers.Serializer):

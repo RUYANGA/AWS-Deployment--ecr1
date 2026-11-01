@@ -1,4 +1,12 @@
-from .auth import LoginSerializer, LogoutSerializer, RegisterSerializer
+from .auth import (
+    LoginSerializer,
+    LogoutSerializer,
+    MessageSerializer,
+    RegisterResponseSerializer,
+    RegisterSerializer,
+    ResendVerificationSerializer,
+    VerifyEmailSerializer,
+)
 from .management import (
     ManagedUserSerializer,
     SetPasswordSerializer,
@@ -16,11 +24,15 @@ __all__ = [
     "LoginSerializer",
     "LogoutSerializer",
     "ManagedUserSerializer",
+    "MessageSerializer",
     "ProfileUpdateSerializer",
+    "RegisterResponseSerializer",
     "RegisterSerializer",
+    "ResendVerificationSerializer",
     "SetPasswordSerializer",
     "TokenPairSerializer",
     "UserCreateSerializer",
     "UserSerializer",
     "UserUpdateSerializer",
+    "VerifyEmailSerializer",
 ]
