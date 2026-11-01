@@ -13,7 +13,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     """Application user, identified by email address instead of a username.
 
     Uses a UUID primary key so user IDs are not guessable or enumerable. Supports
-    Django's groups and permissions through :class:`PermissionsMixin`.
+    Django's groups and permissions through :class:`PermissionsMixin`. Self-registered
+    users must confirm their email with a one-time code before they can log in.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -23,6 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_email_verified = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
