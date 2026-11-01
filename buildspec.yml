@@ -1,0 +1,37 @@
+# CodePipeline "Build" stage (CodeBuild project: logistic, privileged mode).
+# Builds the runtime image, pushes it to ECR tagged with the commit SHA and writes
+# imagedefinitions.json for the ECS deploy stage. All files are passed on as the output
+# artifact so the "Test" stage (buildspec-test.yml) receives the source as well.
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    REPO_URI: 266735846670.dkr.ecr.eu-west-1.amazonaws.com/backend/logistic
+    # Must match the container name in the ECS task definition (logistic-definition-task).
+    CONTAINER_NAME: Main
+    # The Dockerfile uses RUN --mount=type=cache, which needs BuildKit.
+    DOCKER_BUILDKIT: "1"
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION"
+        | docker login --username AWS --password-stdin "${REPO_URI%%/*}"
+      - IMAGE_TAG="$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - echo "Building $REPO_URI:$IMAGE_TAG"
+  build:
+    commands:
+      - docker build --target runtime -t "$REPO_URI:$IMAGE_TAG" .
+  post_build:
+    commands:
+      # CodeBuild still runs post_build when the build fails; push only a good image.
+      - '[ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]'
+      - docker push "$REPO_URI:$IMAGE_TAG"
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$REPO_URI:$IMAGE_TAG"
+        > imagedefinitions.json
+      - cat imagedefinitions.json
+
+artifacts:
+  files:
+    - '**/*'

@@ -1,0 +1,33 @@
+# CodePipeline "Test" stage (CodeBuild project: logistic-test).
+# Mirrors the "test" job in .github/workflows/ci.yml. The project is not privileged (no
+# Docker), so PostgreSQL is installed and started inside the build container.
+version: 0.2
+
+env:
+  shell: bash
+  # Test-only values: nothing here is a real secret.
+  variables:
+    SECRET_KEY: codebuild-insecure-secret-key-used-only-for-automated-tests
+    POSTGRES_DB: logistic_db
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_HOST: localhost
+    POSTGRES_PORT: "5432"
+    PGDATA: /tmp/pgdata
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - dnf install -y -q postgresql16-server
+      - install -d -o postgres -g postgres "$PGDATA" /run/postgresql
+      - runuser -u postgres -- initdb -D "$PGDATA" -U postgres --auth=trust
+      - runuser -u postgres -- pg_ctl -D "$PGDATA" -l /tmp/postgres.log -w start
+      - createdb -h localhost -U postgres "$POSTGRES_DB"
+      - pip install -q -r requirements/dev.txt
+  build:
+    commands:
+      - python manage.py check
+      - python manage.py makemigrations --check --dry-run
+      - python manage.py test apps --settings=config.settings.test --verbosity 2
